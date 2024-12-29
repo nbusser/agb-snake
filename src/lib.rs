@@ -6,7 +6,7 @@
 use agb::{
     display::{
         self,
-        tiled::{RegularMap, TileFormat, TiledMap, VRamManager},
+        tiled::{RegularMap, TileFormat, TileSetting, TiledMap, VRamManager},
         Priority,
     },
     include_background_gfx,
@@ -15,7 +15,7 @@ use agb::{
 
 include_background_gfx!(backgrounds, "121105",
     background => deduplicate "gfx/background.png",
-    grid => deduplicate "gfx/grid.png"
+    grid => deduplicate "gfx/grid.aseprite"
 );
 
 fn create_background(background: &mut RegularMap, vram: &mut VRamManager) {
@@ -28,13 +28,42 @@ fn create_background(background: &mut RegularMap, vram: &mut VRamManager) {
 }
 
 fn create_grid(grid: &mut RegularMap, vram: &mut VRamManager) {
-    for x in 4..26u16 {
-        for y in 4..16u16 {
+    #[repr(u16)]
+    enum GridTileId {
+        Plain = 0,
+        Corner = 1,
+        Roof = 2,
+        Wall = 3,
+    }
+
+    const MIN_X: u16 = 4;
+    const MIN_Y: u16 = 4;
+    const MAX_X: u16 = 26;
+    const MAX_Y: u16 = 16;
+
+    for x in MIN_X..MAX_X {
+        for y in MIN_Y..MAX_Y {
+            let mut tile_id = GridTileId::Plain;
+            let mut hflip = false;
+            let mut vflip = false;
+
+            if (x == MIN_X || x == MAX_X - 1) && (y == MIN_Y || y == MAX_Y - 1) {
+                tile_id = GridTileId::Corner;
+                hflip = x == MAX_X - 1;
+                vflip = y == MAX_Y - 1;
+            } else if x == MIN_X || x == MAX_X - 1 {
+                tile_id = GridTileId::Wall;
+                hflip = x == MAX_X - 1;
+            } else if y == MIN_Y || y == MAX_Y - 1 {
+                tile_id = GridTileId::Roof;
+                vflip = y == MAX_Y - 1;
+            }
+
             grid.set_tile(
                 vram,
                 (x, y),
                 &backgrounds::grid.tiles,
-                backgrounds::grid.tile_settings[0],
+                TileSetting::new(tile_id as u16, hflip, vflip, 0),
             );
         }
     }
