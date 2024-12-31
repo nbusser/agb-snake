@@ -133,8 +133,8 @@ pub fn main(mut gba: agb::Gba) -> ! {
                     snake.apply_input(input);
                 }
 
-                snake.try_move(&objects);
-                snake.display(&objects);
+                snake.try_move();
+                snake.display();
             }
         }
     }

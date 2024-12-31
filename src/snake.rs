@@ -31,10 +31,11 @@ pub struct Snake<'a> {
     body: Vec<SnakeBodyCell<'a>>,
     direction: Direction,
     pub is_alive: bool,
+    objects: &'a OamManaged<'a>,
 }
 
 impl<'a> Snake<'a> {
-    pub fn new(length: u32, objects: &'a OamManaged) -> Self {
+    pub fn new(length: u32, objects: &'a OamManaged<'a>) -> Self {
         // Init snake
         let mut snake_starting_body: Vec<SnakeBodyCell> = Vec::new();
         for i in 0..length {
@@ -52,18 +53,17 @@ impl<'a> Snake<'a> {
             body: snake_starting_body,
             direction: Direction::RIGHT,
             is_alive: true,
+            objects: objects,
         }
     }
-}
 
-impl Snake<'_> {
     const SNAKE_TILE_SIZE: i32 = 16;
     const MIN_X: i32 = 0;
     const MAX_X: i32 = (display::WIDTH / Snake::SNAKE_TILE_SIZE) - 1;
     const MIN_Y: i32 = 0;
     const MAX_Y: i32 = (display::HEIGHT / Snake::SNAKE_TILE_SIZE) - 1;
 
-    pub fn display(&mut self, objects: &OamManaged) {
+    pub fn display(&mut self) {
         self.body.iter_mut().for_each(|body_cell| {
             body_cell.sprite.set_position(Vector2D::<i32> {
                 x: body_cell.position.x * Snake::SNAKE_TILE_SIZE,
@@ -71,7 +71,7 @@ impl Snake<'_> {
             });
             body_cell.sprite.show();
         });
-        objects.commit();
+        self.objects.commit();
     }
 
     pub fn apply_input(&mut self, input: Button) {
@@ -99,14 +99,14 @@ impl Snake<'_> {
         &self.body[0]
     }
 
-    fn die(&mut self, objects: &OamManaged) {
+    fn die(&mut self) {
         self.is_alive = false;
         self.body[0]
             .sprite
-            .set_sprite(objects.sprite(&SPRITE_HEAD_DEAD));
+            .set_sprite(self.objects.sprite(&SPRITE_HEAD_DEAD));
     }
 
-    pub fn try_move(&mut self, objects: &OamManaged) -> bool {
+    pub fn try_move(&mut self) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
         if head_projection.x < Snake::MIN_X
@@ -118,7 +118,7 @@ impl Snake<'_> {
                 .iter()
                 .any(|body_cell| body_cell.position == head_projection)
         {
-            self.die(objects);
+            self.die();
             return false;
         }
 
