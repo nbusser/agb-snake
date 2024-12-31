@@ -113,20 +113,26 @@ pub fn main(mut gba: agb::Gba) -> ! {
 
         loop {
             while snake.is_alive {
+                let mut next_input = None;
                 for _n_frames in 0..30 {
                     input.update();
 
-                    if input.is_just_pressed(agb::input::Button::UP) {
-                        snake.apply_input(Button::UP);
-                    } else if input.is_just_pressed(agb::input::Button::DOWN) {
-                        snake.apply_input(Button::DOWN);
-                    } else if input.is_just_pressed(agb::input::Button::LEFT) {
-                        snake.apply_input(Button::LEFT);
-                    } else if input.is_just_pressed(agb::input::Button::RIGHT) {
-                        snake.apply_input(Button::RIGHT);
-                    }
+                    if let Some(frame_input) =
+                        [Button::UP, Button::DOWN, Button::LEFT, Button::RIGHT]
+                            .iter()
+                            .find(|button| input.is_just_pressed(**button))
+                            .copied()
+                    {
+                        next_input = Some(frame_input);
+                    };
+
                     vblank.wait_for_vblank();
                 }
+
+                if let Some(input) = next_input {
+                    snake.apply_input(input);
+                }
+
                 snake.try_move(&objects);
                 snake.display(&objects);
             }
