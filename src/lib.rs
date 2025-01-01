@@ -120,7 +120,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
         loop {
             while snake.is_alive {
                 let mut next_input = None;
-                for _n_frames in 0..30 {
+                for _n_frames in 0..15 {
                     input.update();
 
                     if let Some(frame_input) =
