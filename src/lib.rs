@@ -6,7 +6,7 @@
 extern crate alloc;
 
 mod apple;
-mod board;
+mod constants;
 mod snake;
 
 use agb::{

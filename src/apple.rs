@@ -4,7 +4,7 @@ use agb::{
     rng::RandomNumberGenerator,
 };
 
-use crate::board;
+use crate::constants;
 
 static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/apple.aseprite");
 
@@ -18,16 +18,18 @@ pub struct Apple<'a> {
 
 impl<'a> Apple<'a> {
     fn pick_random_pos(&mut self) -> Vector2D<u16> {
-        let x = self.rng.gen().abs().rem_euclid(board::MAX_X) as u16;
-        let y = self.rng.gen().abs().rem_euclid(board::MAX_Y) as u16;
+        let x = self.rng.gen().abs().rem_euclid(constants::MAX_X) as u16;
+        let y = self.rng.gen().abs().rem_euclid(constants::MAX_Y) as u16;
         Vector2D { x, y }
     }
 
     pub fn move_apple(&mut self) {
         self.position = self.pick_random_pos();
 
-        self.sprite.set_x(self.position.x * board::TILE_SIZE as u16);
-        self.sprite.set_y(self.position.y * board::TILE_SIZE as u16);
+        self.sprite
+            .set_x(self.position.x * constants::TILE_SIZE as u16);
+        self.sprite
+            .set_y(self.position.y * constants::TILE_SIZE as u16);
     }
 
     pub fn new(objects: &'a OamManaged<'a>, rng: &'a mut RandomNumberGenerator) -> Self {

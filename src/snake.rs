@@ -5,7 +5,7 @@ use agb::{
 };
 use alloc::vec::Vec;
 
-use crate::{apple::Apple, board};
+use crate::{apple::Apple, constants};
 
 static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/snake.aseprite");
 
@@ -106,8 +106,8 @@ impl<'a> Snake<'a> {
     fn move_sprites(&mut self) {
         self.body.iter_mut().for_each(|body_cell| {
             body_cell.sprite.set_position(Vector2D::<i32> {
-                x: body_cell.position.x * board::TILE_SIZE,
-                y: body_cell.position.y * board::TILE_SIZE,
+                x: body_cell.position.x * constants::TILE_SIZE,
+                y: body_cell.position.y * constants::TILE_SIZE,
             });
         });
     }
@@ -115,10 +115,10 @@ impl<'a> Snake<'a> {
     pub fn try_move(&mut self, objects: &'a OamManaged<'a>, apple: &mut Apple) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
-        if head_projection.x < board::MIN_X
-            || head_projection.x > board::MAX_X
-            || head_projection.y < board::MIN_Y
-            || head_projection.y > board::MAX_Y
+        if head_projection.x < constants::MIN_X
+            || head_projection.x > constants::MAX_X
+            || head_projection.y < constants::MIN_Y
+            || head_projection.y > constants::MAX_Y
             || self
                 .body
                 .iter()
