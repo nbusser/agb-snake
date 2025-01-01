@@ -6,84 +6,49 @@
 extern crate alloc;
 
 mod apple;
+mod background;
 mod constants;
 mod snake;
 
 use agb::{
-    display::{
-        self,
-        tiled::{RegularMap, TileFormat, TileSetting, TiledMap, VRamManager},
-        Priority,
-    },
-    include_background_gfx,
+    display::{self, tiled::TileFormat, Priority},
     input::Button,
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
 
-include_background_gfx!(backgrounds, "121105",
-    background => deduplicate "gfx/plain-background.png",
-    props => deduplicate "gfx/props.aseprite",
-);
-
-fn create_background(
-    background: &mut RegularMap,
-    props: &mut RegularMap,
-    vram: &mut VRamManager,
-    rng: &mut RandomNumberGenerator,
-) {
-    background.set_scroll_pos((0i16, 0));
-    vram.set_background_palettes(backgrounds::PALETTES);
-
-    background.fill_with(vram, &backgrounds::background);
-    background.commit(vram);
-    background.set_visible(true);
-
-    const NB_PROPS_TILES: i32 = 3;
-    const N_TILES_X: u32 = (display::WIDTH / constants::TILE_SIZE) as u32;
-    const N_TILES_Y: u32 = (display::HEIGHT / constants::TILE_SIZE) as u32;
-    for x in 0..N_TILES_X {
-        for y in 0..N_TILES_Y {
-            if rng.gen().rem_euclid(100) < 2 {
-                let tile_id = rng.gen().rem_euclid(NB_PROPS_TILES) as u16;
-                props.set_tile(
-                    vram,
-                    (x as u16, y as u16),
-                    &backgrounds::props.tiles,
-                    TileSetting::new(tile_id, false, false, 0),
-                );
-            };
-        }
-    }
-    props.commit(vram);
-    props.set_visible(true);
-}
-
 pub fn main(mut gba: agb::Gba) -> ! {
     let objects = gba.display.object.get_managed();
     let vblank = agb::interrupt::VBlank::get();
 
+    let mut rng = RandomNumberGenerator::new();
+
     let (tiled, mut vram) = gba.display.video.tiled1();
-    let mut background = tiled.regular(
+    let mut background1 = tiled.regular(
         Priority::P1,
         display::tiled::RegularBackgroundSize::Background32x32,
         TileFormat::FourBpp,
     );
-    let mut props = tiled.regular(
+    let mut background2 = tiled.regular(
         Priority::P0,
         display::tiled::RegularBackgroundSize::Background32x32,
         TileFormat::FourBpp,
     );
 
+    let mut background = background::Background::new(
+        &mut background1,
+        &mut background2,
+        background::Mode::SPLASH,
+        &mut vram,
+        &mut rng,
+    );
+    background.commit(&mut vram);
+
     let mut mixer = gba.mixer.mixer(Frequency::Hz32768);
     mixer.enable();
 
-    let mut rng = RandomNumberGenerator::new();
-
     let mut apple = apple::Apple::new(&objects, &mut rng);
     let mut snake = snake::Snake::new(3, &objects);
-
-    create_background(&mut background, &mut props, &mut vram, &mut rng);
 
     loop {
         let mut input = agb::input::ButtonController::new();
@@ -94,6 +59,9 @@ pub fn main(mut gba: agb::Gba) -> ! {
             }
             vblank.wait_for_vblank();
         }
+
+        background.set_mode(background::Mode::GAME, &mut vram);
+        background.commit(&mut vram);
 
         loop {
             while snake.is_alive {
