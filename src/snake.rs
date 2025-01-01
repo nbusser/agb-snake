@@ -106,8 +106,8 @@ impl<'a> Snake<'a> {
     fn move_sprites(&mut self) {
         self.body.iter_mut().for_each(|body_cell| {
             body_cell.sprite.set_position(Vector2D::<i32> {
-                x: body_cell.position.x * constants::TILE_SIZE,
-                y: body_cell.position.y * constants::TILE_SIZE,
+                x: body_cell.position.x * constants::OBJECTS_SIZE,
+                y: body_cell.position.y * constants::OBJECTS_SIZE,
             });
         });
     }
@@ -115,10 +115,10 @@ impl<'a> Snake<'a> {
     pub fn try_move(&mut self, objects: &'a OamManaged<'a>, apple: &mut Apple) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
-        if head_projection.x < constants::MIN_X
-            || head_projection.x > constants::MAX_X
-            || head_projection.y < constants::MIN_Y
-            || head_projection.y > constants::MAX_Y
+        if head_projection.x < constants::BOARD_MIN_X
+            || head_projection.x > constants::BOARD_MAX_X
+            || head_projection.y < constants::BOARD_MIN_Y
+            || head_projection.y > constants::BOARD_MAX_Y
             || self
                 .body
                 .iter()

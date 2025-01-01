@@ -17,80 +17,61 @@ use agb::{
     },
     include_background_gfx,
     input::Button,
+    println,
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
 
 include_background_gfx!(backgrounds, "121105",
-    background => deduplicate "gfx/background.png",
-    grid => deduplicate "gfx/grid.aseprite",
+    background => deduplicate "gfx/plain-background.png",
+    props => deduplicate "gfx/props.aseprite",
 );
 
-fn create_background(background: &mut RegularMap, vram: &mut VRamManager) {
+fn create_background(
+    background: &mut RegularMap,
+    props: &mut RegularMap,
+    vram: &mut VRamManager,
+    rng: &mut RandomNumberGenerator,
+) {
     background.set_scroll_pos((0i16, 0));
     vram.set_background_palettes(backgrounds::PALETTES);
-    background.set_visible(false);
+
     background.fill_with(vram, &backgrounds::background);
     background.commit(vram);
     background.set_visible(true);
-}
 
-fn create_grid(grid: &mut RegularMap, vram: &mut VRamManager) {
-    #[repr(u16)]
-    enum GridTileId {
-        Plain = 0,
-        Corner = 1,
-        Roof = 2,
-        Wall = 3,
-    }
-
-    const MIN_X: u16 = 4;
-    const MIN_Y: u16 = 4;
-    const MAX_X: u16 = 26;
-    const MAX_Y: u16 = 16;
-
-    for x in MIN_X..MAX_X {
-        for y in MIN_Y..MAX_Y {
-            let mut tile_id = GridTileId::Plain;
-            let mut hflip = false;
-            let mut vflip = false;
-
-            if (x == MIN_X || x == MAX_X - 1) && (y == MIN_Y || y == MAX_Y - 1) {
-                tile_id = GridTileId::Corner;
-                hflip = x == MAX_X - 1;
-                vflip = y == MAX_Y - 1;
-            } else if x == MIN_X || x == MAX_X - 1 {
-                tile_id = GridTileId::Wall;
-                hflip = x == MAX_X - 1;
-            } else if y == MIN_Y || y == MAX_Y - 1 {
-                tile_id = GridTileId::Roof;
-                vflip = y == MAX_Y - 1;
-            }
-
-            grid.set_tile(
-                vram,
-                (x, y),
-                &backgrounds::grid.tiles,
-                TileSetting::new(tile_id as u16, hflip, vflip, 0),
-            );
+    const NB_PROPS_TILES: i32 = 3;
+    const N_TILES_X: u32 = (display::WIDTH / constants::TILE_SIZE) as u32;
+    const N_TILES_Y: u32 = (display::HEIGHT / constants::TILE_SIZE) as u32;
+    for x in 0..N_TILES_X {
+        for y in 0..N_TILES_Y {
+            if rng.gen().rem_euclid(100) < 1 {
+                let tile_id = rng.gen().rem_euclid(NB_PROPS_TILES) as u16;
+                props.set_tile(
+                    vram,
+                    (x as u16, y as u16),
+                    &backgrounds::props.tiles,
+                    TileSetting::new(tile_id, false, false, 0),
+                );
+            };
         }
     }
-    grid.commit(vram);
-    grid.set_visible(true);
+    props.commit(vram);
+    props.set_visible(true);
 }
 
 pub fn main(mut gba: agb::Gba) -> ! {
     let objects = gba.display.object.get_managed();
     let vblank = agb::interrupt::VBlank::get();
 
-    let (tiled, mut vram) = gba.display.video.tiled0();
-    let mut background = tiled.background(
-        Priority::P3,
+    let (tiled, mut vram) = gba.display.video.tiled1();
+    let mut background = tiled.regular(
+        Priority::P1,
         display::tiled::RegularBackgroundSize::Background32x32,
         TileFormat::FourBpp,
     );
-    let mut background_grid = tiled.background(
-        Priority::P2,
+    let mut props = tiled.regular(
+        Priority::P0,
         display::tiled::RegularBackgroundSize::Background32x32,
         TileFormat::FourBpp,
     );
@@ -100,12 +81,12 @@ pub fn main(mut gba: agb::Gba) -> ! {
 
     let mut rng = RandomNumberGenerator::new();
 
+    create_background(&mut background, &mut props, &mut vram, &mut rng);
+
     let mut apple = apple::Apple::new(&objects, &mut rng);
     let mut snake = snake::Snake::new(3, &objects);
 
     loop {
-        create_background(&mut background, &mut vram);
-
         let mut input = agb::input::ButtonController::new();
         loop {
             input.update();
@@ -114,8 +95,6 @@ pub fn main(mut gba: agb::Gba) -> ! {
             }
             vblank.wait_for_vblank();
         }
-
-        create_grid(&mut background_grid, &mut vram);
 
         loop {
             while snake.is_alive {

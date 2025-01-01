@@ -18,8 +18,8 @@ pub struct Apple<'a> {
 
 impl<'a> Apple<'a> {
     fn pick_random_pos(&mut self) -> Vector2D<u16> {
-        let x = self.rng.gen().abs().rem_euclid(constants::MAX_X) as u16;
-        let y = self.rng.gen().abs().rem_euclid(constants::MAX_Y) as u16;
+        let x = self.rng.gen().abs().rem_euclid(constants::BOARD_MAX_X) as u16;
+        let y = self.rng.gen().abs().rem_euclid(constants::BOARD_MAX_Y) as u16;
         Vector2D { x, y }
     }
 
@@ -27,9 +27,9 @@ impl<'a> Apple<'a> {
         self.position = self.pick_random_pos();
 
         self.sprite
-            .set_x(self.position.x * constants::TILE_SIZE as u16);
+            .set_x(self.position.x * constants::OBJECTS_SIZE as u16);
         self.sprite
-            .set_y(self.position.y * constants::TILE_SIZE as u16);
+            .set_y(self.position.y * constants::OBJECTS_SIZE as u16);
     }
 
     pub fn new(objects: &'a OamManaged<'a>, rng: &'a mut RandomNumberGenerator) -> Self {
