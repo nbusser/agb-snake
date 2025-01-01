@@ -45,7 +45,7 @@ fn create_background(
     const N_TILES_Y: u32 = (display::HEIGHT / constants::TILE_SIZE) as u32;
     for x in 0..N_TILES_X {
         for y in 0..N_TILES_Y {
-            if rng.gen().rem_euclid(100) < 1 {
+            if rng.gen().rem_euclid(100) < 2 {
                 let tile_id = rng.gen().rem_euclid(NB_PROPS_TILES) as u16;
                 props.set_tile(
                     vram,
