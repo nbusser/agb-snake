@@ -1,3 +1,5 @@
+use core::ops::Sub;
+
 use agb::{
     display::object::{OamManaged, Object, Sprite},
     fixnum::Vector2D,
@@ -5,7 +7,7 @@ use agb::{
 };
 use alloc::vec::Vec;
 
-use crate::board;
+use crate::{apple::Apple, board};
 
 static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/snake.aseprite");
 
@@ -34,6 +36,20 @@ pub struct Snake<'a> {
 }
 
 impl<'a> Snake<'a> {
+    fn grow(&mut self) {
+        let tail = &self.body[self.body.len() - 1].position;
+        let before_tail = &self.body[self.body.len() - 2].position;
+
+        let mut object = self.objects.object_sprite(&SPRITE_BODY);
+        object.show();
+
+        let offset = *tail - *before_tail;
+        self.body.push(SnakeBodyCell {
+            position: *tail + offset,
+            sprite: object,
+        });
+    }
+
     pub fn new(length: u32, objects: &'a OamManaged<'a>) -> Self {
         // Init snake
         let mut snake_starting_body: Vec<SnakeBodyCell> = Vec::new();
@@ -100,7 +116,7 @@ impl<'a> Snake<'a> {
         });
     }
 
-    pub fn try_move(&mut self) -> bool {
+    pub fn try_move(&mut self, apple: &mut Apple) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
         if head_projection.x < board::MIN_X
@@ -114,6 +130,13 @@ impl<'a> Snake<'a> {
         {
             self.die();
             return false;
+        }
+
+        if head_projection.x == apple.position.x as i32
+            && head_projection.y == apple.position.y as i32
+        {
+            apple.move_apple();
+            self.grow();
         }
 
         for i in (1..self.body.len()).rev() {

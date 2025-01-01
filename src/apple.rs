@@ -11,7 +11,7 @@ static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/ap
 static SPRITE_APPLE: &Sprite = SPRITES.tags().get("apple").sprite(0);
 
 pub struct Apple<'a> {
-    position: Vector2D<u16>,
+    pub position: Vector2D<u16>,
     sprite: Object<'a>,
     rng: &'a mut RandomNumberGenerator,
 }
