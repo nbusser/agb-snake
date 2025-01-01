@@ -17,7 +17,6 @@ use agb::{
     },
     include_background_gfx,
     input::Button,
-    println,
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
@@ -81,10 +80,10 @@ pub fn main(mut gba: agb::Gba) -> ! {
 
     let mut rng = RandomNumberGenerator::new();
 
-    create_background(&mut background, &mut props, &mut vram, &mut rng);
-
     let mut apple = apple::Apple::new(&objects, &mut rng);
     let mut snake = snake::Snake::new(3, &objects);
+
+    create_background(&mut background, &mut props, &mut vram, &mut rng);
 
     loop {
         let mut input = agb::input::ButtonController::new();
@@ -118,7 +117,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                     snake.apply_input(input);
                 }
 
-                snake.try_move(&objects, &mut apple);
+                snake.try_move(&objects, &mut apple, &mut rng);
                 objects.commit();
             }
         }

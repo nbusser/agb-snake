@@ -2,6 +2,7 @@ use agb::{
     display::object::{OamManaged, Object, Sprite},
     fixnum::Vector2D,
     input::Button,
+    rng::RandomNumberGenerator,
 };
 use alloc::vec::Vec;
 
@@ -112,7 +113,12 @@ impl<'a> Snake<'a> {
         });
     }
 
-    pub fn try_move(&mut self, objects: &'a OamManaged<'a>, apple: &mut Apple) -> bool {
+    pub fn try_move(
+        &mut self,
+        objects: &'a OamManaged<'a>,
+        apple: &mut Apple,
+        rng: &mut RandomNumberGenerator,
+    ) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
         if head_projection.x < constants::BOARD_MIN_X
@@ -131,7 +137,7 @@ impl<'a> Snake<'a> {
         if head_projection.x == apple.position.x as i32
             && head_projection.y == apple.position.y as i32
         {
-            apple.move_apple();
+            apple.move_apple(rng);
             self.grow(objects);
         }
 
