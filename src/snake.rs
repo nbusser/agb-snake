@@ -1,12 +1,11 @@
 use agb::{
-    display::{
-        self,
-        object::{OamManaged, Object, Sprite},
-    },
+    display::object::{OamManaged, Object, Sprite},
     fixnum::Vector2D,
     input::Button,
 };
 use alloc::vec::Vec;
+
+use crate::board;
 
 static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/snake.aseprite");
 
@@ -41,12 +40,15 @@ impl<'a> Snake<'a> {
         for i in 0..length {
             let sprite = if i == 0 { SPRITE_HEAD } else { SPRITE_BODY };
 
+            let mut object = objects.object_sprite(sprite);
+            object.show();
+
             snake_starting_body.push(SnakeBodyCell {
                 position: Vector2D {
                     x: 5 - (i as i32),
                     y: 5,
                 },
-                sprite: objects.object_sprite(sprite),
+                sprite: object,
             });
         }
         Self {
@@ -55,23 +57,6 @@ impl<'a> Snake<'a> {
             is_alive: true,
             objects: objects,
         }
-    }
-
-    const SNAKE_TILE_SIZE: i32 = 16;
-    const MIN_X: i32 = 0;
-    const MAX_X: i32 = (display::WIDTH / Snake::SNAKE_TILE_SIZE) - 1;
-    const MIN_Y: i32 = 0;
-    const MAX_Y: i32 = (display::HEIGHT / Snake::SNAKE_TILE_SIZE) - 1;
-
-    pub fn display(&mut self) {
-        self.body.iter_mut().for_each(|body_cell| {
-            body_cell.sprite.set_position(Vector2D::<i32> {
-                x: body_cell.position.x * Snake::SNAKE_TILE_SIZE,
-                y: body_cell.position.y * Snake::SNAKE_TILE_SIZE,
-            });
-            body_cell.sprite.show();
-        });
-        self.objects.commit();
     }
 
     pub fn apply_input(&mut self, input: Button) {
@@ -106,13 +91,22 @@ impl<'a> Snake<'a> {
             .set_sprite(self.objects.sprite(&SPRITE_HEAD_DEAD));
     }
 
+    fn move_sprites(&mut self) {
+        self.body.iter_mut().for_each(|body_cell| {
+            body_cell.sprite.set_position(Vector2D::<i32> {
+                x: body_cell.position.x * board::TILE_SIZE,
+                y: body_cell.position.y * board::TILE_SIZE,
+            });
+        });
+    }
+
     pub fn try_move(&mut self) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
-        if head_projection.x < Snake::MIN_X
-            || head_projection.x > Snake::MAX_X
-            || head_projection.y < Snake::MIN_Y
-            || head_projection.y > Snake::MAX_Y
+        if head_projection.x < board::MIN_X
+            || head_projection.x > board::MAX_X
+            || head_projection.y < board::MIN_Y
+            || head_projection.y > board::MAX_Y
             || self
                 .body
                 .iter()
@@ -125,8 +119,10 @@ impl<'a> Snake<'a> {
         for i in (1..self.body.len()).rev() {
             self.body[i].position = self.body[i - 1].position;
         }
-
         self.body[0].position = head_projection;
+
+        self.move_sprites();
+
         return true;
     }
 }

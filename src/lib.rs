@@ -5,6 +5,8 @@
 
 extern crate alloc;
 
+mod apple;
+mod board;
 mod snake;
 
 use agb::{
@@ -15,6 +17,7 @@ use agb::{
     },
     include_background_gfx,
     input::Button,
+    rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
 
@@ -95,6 +98,9 @@ pub fn main(mut gba: agb::Gba) -> ! {
     let mut mixer = gba.mixer.mixer(Frequency::Hz32768);
     mixer.enable();
 
+    let mut rng = RandomNumberGenerator::new();
+
+    let mut apple = apple::Apple::new(&objects, &mut rng);
     let mut snake = snake::Snake::new(3, &objects);
 
     loop {
@@ -134,7 +140,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                 }
 
                 snake.try_move();
-                snake.display();
+                objects.commit();
             }
         }
     }
