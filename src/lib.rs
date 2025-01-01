@@ -12,10 +12,21 @@ mod snake;
 
 use agb::{
     display::{self, tiled::TileFormat, Priority},
-    input::Button,
+    input::{Button, ButtonController},
+    interrupt::VBlank,
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
+
+fn wait_for_input(vblank: &VBlank, input: &mut ButtonController) {
+    loop {
+        input.update();
+        if input.is_just_pressed(agb::input::Button::all()) {
+            break;
+        }
+        vblank.wait_for_vblank();
+    }
+}
 
 pub fn main(mut gba: agb::Gba) -> ! {
     let objects = gba.display.object.get_managed();
@@ -47,23 +58,21 @@ pub fn main(mut gba: agb::Gba) -> ! {
     let mut mixer = gba.mixer.mixer(Frequency::Hz32768);
     mixer.enable();
 
-    let mut apple = apple::Apple::new(&objects, &mut rng);
-    let mut snake = snake::Snake::new(3, &objects);
+    let mut input = agb::input::ButtonController::new();
 
     loop {
-        let mut input = agb::input::ButtonController::new();
-        loop {
-            input.update();
-            if input.is_just_pressed(agb::input::Button::all()) {
-                break;
-            }
-            vblank.wait_for_vblank();
-        }
+        background.set_mode(background::Mode::SPLASH, &mut vram);
+        background.commit(&mut vram);
+        objects.commit();
+
+        wait_for_input(&vblank, &mut input);
 
         background.set_mode(background::Mode::GAME, &mut vram);
         background.commit(&mut vram);
 
-        loop {
+        {
+            let mut apple = apple::Apple::new(&objects, &mut rng);
+            let mut snake = snake::Snake::new(3, &objects);
             while snake.is_alive {
                 let mut next_input = None;
                 for _n_frames in 0..15 {
@@ -88,6 +97,8 @@ pub fn main(mut gba: agb::Gba) -> ! {
                 snake.try_move(&objects, &mut apple, &mut rng);
                 objects.commit();
             }
+
+            wait_for_input(&vblank, &mut input);
         }
     }
 }
