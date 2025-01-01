@@ -1,5 +1,3 @@
-use core::ops::Sub;
-
 use agb::{
     display::object::{OamManaged, Object, Sprite},
     fixnum::Vector2D,
@@ -32,15 +30,14 @@ pub struct Snake<'a> {
     body: Vec<SnakeBodyCell<'a>>,
     direction: Direction,
     pub is_alive: bool,
-    objects: &'a OamManaged<'a>,
 }
 
 impl<'a> Snake<'a> {
-    fn grow(&mut self) {
+    fn grow(&mut self, objects: &'a OamManaged<'a>) {
         let tail = &self.body[self.body.len() - 1].position;
         let before_tail = &self.body[self.body.len() - 2].position;
 
-        let mut object = self.objects.object_sprite(&SPRITE_BODY);
+        let mut object = objects.object_sprite(&SPRITE_BODY);
         object.show();
 
         let offset = *tail - *before_tail;
@@ -71,7 +68,6 @@ impl<'a> Snake<'a> {
             body: snake_starting_body,
             direction: Direction::RIGHT,
             is_alive: true,
-            objects: objects,
         }
     }
 
@@ -100,11 +96,11 @@ impl<'a> Snake<'a> {
         &self.body[0]
     }
 
-    fn die(&mut self) {
+    fn die(&mut self, objects: &OamManaged) {
         self.is_alive = false;
         self.body[0]
             .sprite
-            .set_sprite(self.objects.sprite(&SPRITE_HEAD_DEAD));
+            .set_sprite(objects.sprite(&SPRITE_HEAD_DEAD));
     }
 
     fn move_sprites(&mut self) {
@@ -116,7 +112,7 @@ impl<'a> Snake<'a> {
         });
     }
 
-    pub fn try_move(&mut self, apple: &mut Apple) -> bool {
+    pub fn try_move(&mut self, objects: &'a OamManaged<'a>, apple: &mut Apple) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
         if head_projection.x < board::MIN_X
@@ -128,7 +124,7 @@ impl<'a> Snake<'a> {
                 .iter()
                 .any(|body_cell| body_cell.position == head_projection)
         {
-            self.die();
+            self.die(objects);
             return false;
         }
 
@@ -136,7 +132,7 @@ impl<'a> Snake<'a> {
             && head_projection.y == apple.position.y as i32
         {
             apple.move_apple();
-            self.grow();
+            self.grow(objects);
         }
 
         for i in (1..self.body.len()).rev() {

@@ -139,7 +139,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                     snake.apply_input(input);
                 }
 
-                snake.try_move(&mut apple);
+                snake.try_move(&objects, &mut apple);
                 objects.commit();
             }
         }
