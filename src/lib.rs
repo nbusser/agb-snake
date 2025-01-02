@@ -18,6 +18,7 @@ use agb::{
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
+use background::RegularMapAndId;
 use sfx::Sfx;
 
 fn wait_for_input(vblank: &VBlank, input: &mut ButtonController, sfx: &mut Sfx) {
@@ -38,6 +39,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
     let mut rng = RandomNumberGenerator::new();
 
     let (tiled, mut vram) = gba.display.video.tiled1();
+
     let mut background1 = tiled.regular(
         Priority::P1,
         display::tiled::RegularBackgroundSize::Background32x32,
@@ -49,9 +51,18 @@ pub fn main(mut gba: agb::Gba) -> ! {
         TileFormat::FourBpp,
     );
 
+    let blend = gba.display.blend.get();
+
     let mut background = background::Background::new(
-        &mut background1,
-        &mut background2,
+        RegularMapAndId {
+            id: background1.background(),
+            map: &mut background1,
+        },
+        RegularMapAndId {
+            id: background2.background(),
+            map: &mut background2,
+        },
+        blend,
         background::Mode::SPLASH,
         &mut vram,
         &mut rng,
@@ -65,15 +76,24 @@ pub fn main(mut gba: agb::Gba) -> ! {
 
     let mut input = agb::input::ButtonController::new();
 
+    let mut add_fading = false;
     loop {
+        if add_fading {
+            background.fadeout(&vblank, &mut sfx);
+        }
         background.set_mode(background::Mode::SPLASH, &mut vram);
         background.commit(&mut vram);
         objects.commit();
+        if add_fading {
+            background.fadein(&vblank, &mut sfx);
+        }
 
         wait_for_input(&vblank, &mut input, &mut sfx);
 
+        background.fadeout(&vblank, &mut sfx);
         background.set_mode(background::Mode::GAME, &mut vram);
         background.commit(&mut vram);
+        background.fadein(&vblank, &mut sfx);
 
         {
             let mut apple = apple::Apple::new(&objects, &mut rng);
@@ -109,6 +129,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
             }
 
             wait_for_input(&vblank, &mut input, &mut sfx);
+            add_fading = true;
         }
     }
 }
