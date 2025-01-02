@@ -2,7 +2,7 @@
 
 ![image](./gfx/splash.png)
 
-Silly basic game with AGB.
+Basic game for **Gameboy Advance** written with AGB.
 
 ## Building
 
