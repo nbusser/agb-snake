@@ -11,6 +11,8 @@ mod constants;
 mod sfx;
 mod snake;
 
+use core::cmp::max;
+
 use agb::{
     display::{self, tiled::TileFormat, Priority},
     input::{Button, ButtonController},
@@ -113,7 +115,8 @@ pub fn main(mut gba: agb::Gba) -> ! {
             let mut snake = snake::Snake::new(3, &objects);
             while snake.is_alive {
                 let mut next_input = None;
-                for _n_frames in 0..15 {
+                let nb_frames_slowdown = max(15 - (snake.length() / 5), 3);
+                for _n_frames in 0..nb_frames_slowdown {
                     sfx.frame();
                     input.update();
 

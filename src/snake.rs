@@ -36,6 +36,10 @@ pub struct Snake<'a> {
 }
 
 impl<'a> Snake<'a> {
+    pub fn length(&self) -> usize {
+        self.body.len()
+    }
+
     fn grow(&mut self, objects: &'a OamManaged<'a>) {
         let tail = &self.body[self.body.len() - 1].position;
         let before_tail = &self.body[self.body.len() - 2].position;
