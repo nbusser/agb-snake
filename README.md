@@ -1,5 +1,7 @@
 # AGB Snake
 
+![image](./gfx/splash.png)
+
 Silly basic game with AGB.
 
 ## Building
