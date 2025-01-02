@@ -82,8 +82,11 @@ pub fn main(mut gba: agb::Gba) -> ! {
                 let mut next_input = None;
                 for _n_frames in 0..15 {
                     sfx.frame();
-
                     input.update();
+
+                    if snake.frame_anim(&objects) {
+                        objects.commit();
+                    }
 
                     if let Some(frame_input) =
                         [Button::UP, Button::DOWN, Button::LEFT, Button::RIGHT]

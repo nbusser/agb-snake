@@ -60,16 +60,21 @@ impl<'a> Snake<'a> {
                 SPRITE_BODY
             };
 
+            let object_position = Vector2D {
+                x: 5 - (i as i32),
+                y: 5,
+            };
+
             let mut object = objects.object_sprite(sprite);
+            object.set_position(object_position * constants::OBJECTS_SIZE);
             object.show();
 
-            snake_starting_body.push(SnakeBodyCell {
-                position: Vector2D {
-                    x: 5 - (i as i32),
-                    y: 5,
-                },
+            let body_cell = SnakeBodyCell {
+                position: object_position,
                 sprite: object,
-            });
+            };
+
+            snake_starting_body.push(body_cell);
         }
         Self {
             body: snake_starting_body,
@@ -121,11 +126,17 @@ impl<'a> Snake<'a> {
         });
     }
 
-    fn play_anim(&mut self, objects: &'a OamManaged<'a>) {
-        self.animation_frame = (self.animation_frame + 1) % SPRITE_HEAD_TAG.sprites().len();
-        self.body[0]
-            .sprite
-            .set_sprite(objects.sprite(SPRITE_HEAD_TAG.sprite(self.animation_frame)));
+    const ANIMATION_SLOWDOWN_FACTOR: usize = 10;
+
+    pub fn frame_anim(&mut self, objects: &'a OamManaged<'a>) -> bool {
+        self.animation_frame = (self.animation_frame + 1)
+            % (SPRITE_HEAD_TAG.sprites().len() * Self::ANIMATION_SLOWDOWN_FACTOR);
+        self.body[0].sprite.set_sprite(objects.sprite(
+            SPRITE_HEAD_TAG.sprite(self.animation_frame / Self::ANIMATION_SLOWDOWN_FACTOR),
+        ));
+        self.animation_frame
+            .rem_euclid(Self::ANIMATION_SLOWDOWN_FACTOR)
+            == 0
     }
 
     pub fn frame(
@@ -165,7 +176,7 @@ impl<'a> Snake<'a> {
 
         self.move_sprites();
 
-        self.play_anim(objects);
+        self.frame_anim(objects);
 
         return true;
     }
