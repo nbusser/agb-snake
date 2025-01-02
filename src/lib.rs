@@ -8,6 +8,7 @@ extern crate alloc;
 mod apple;
 mod background;
 mod constants;
+mod sfx;
 mod snake;
 
 use agb::{
@@ -17,9 +18,11 @@ use agb::{
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
+use sfx::Sfx;
 
-fn wait_for_input(vblank: &VBlank, input: &mut ButtonController) {
+fn wait_for_input(vblank: &VBlank, input: &mut ButtonController, sfx: &mut Sfx) {
     loop {
+        sfx.frame();
         input.update();
         if input.is_just_pressed(agb::input::Button::all()) {
             break;
@@ -57,6 +60,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
 
     let mut mixer = gba.mixer.mixer(Frequency::Hz32768);
     mixer.enable();
+    let mut sfx = sfx::Sfx::new(&mut mixer);
 
     let mut input = agb::input::ButtonController::new();
 
@@ -65,7 +69,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
         background.commit(&mut vram);
         objects.commit();
 
-        wait_for_input(&vblank, &mut input);
+        wait_for_input(&vblank, &mut input, &mut sfx);
 
         background.set_mode(background::Mode::GAME, &mut vram);
         background.commit(&mut vram);
@@ -76,6 +80,8 @@ pub fn main(mut gba: agb::Gba) -> ! {
             while snake.is_alive {
                 let mut next_input = None;
                 for _n_frames in 0..15 {
+                    sfx.frame();
+
                     input.update();
 
                     if let Some(frame_input) =
@@ -98,7 +104,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                 objects.commit();
             }
 
-            wait_for_input(&vblank, &mut input);
+            wait_for_input(&vblank, &mut input, &mut sfx);
         }
     }
 }
