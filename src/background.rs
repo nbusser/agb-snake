@@ -5,7 +5,7 @@ use agb::{
         tiled::{BackgroundID, RegularMap, TileSetting, TiledMap, VRamManager},
     },
     fixnum::Num,
-    include_background_gfx, println,
+    include_background_gfx,
     rng::RandomNumberGenerator,
 };
 
