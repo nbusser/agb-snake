@@ -5,12 +5,11 @@ use agb::{
         tiled::{BackgroundID, RegularMap, TileSetting, TiledMap, VRamManager},
     },
     fixnum::Num,
-    include_background_gfx,
-    interrupt::VBlank,
+    include_background_gfx, println,
     rng::RandomNumberGenerator,
 };
 
-use crate::{constants, sfx::Sfx};
+use crate::constants;
 
 include_background_gfx!(backgrounds, "121105",
     background => deduplicate "gfx/plain-background.png",
@@ -23,10 +22,23 @@ pub enum Mode {
     GAME,
 }
 
+#[derive(PartialEq)]
+pub enum FadeDirection {
+    FadeIn,
+    FadeOut,
+}
+
+struct FadeOperation {
+    direction: FadeDirection,
+    increase_factor: f64,
+    current_fade: f64,
+}
+
 pub struct Background<'a> {
     background1: &'a mut RegularMap,
     background2: &'a mut RegularMap,
     blend: Blend<'a>,
+    fade: Option<FadeOperation>,
 }
 
 fn build_props(
@@ -97,6 +109,7 @@ impl<'a> Background<'a> {
             background1: background1.map,
             background2: background2.map,
             blend,
+            fade: None,
         };
 
         instance.set_mode(mode, vram);
@@ -108,29 +121,33 @@ impl<'a> Background<'a> {
         self.background2.commit(vram);
     }
 
-    pub fn fadein(&mut self, vblank: &VBlank, sfx: &mut Sfx) {
-        let increase_factor = -0.05;
+    pub fn start_fade(&mut self, direction: FadeDirection) {
         self.blend.reset_fades();
-        let mut blend_level = 1.0;
-        while blend_level > 0.0 {
-            blend_level += increase_factor;
-            self.blend.set_fade(Num::from_f64(blend_level));
-            self.blend.commit();
-            sfx.frame();
-            vblank.wait_for_vblank();
-        }
+        let start_value = match direction {
+            FadeDirection::FadeIn => 1.0,
+            FadeDirection::FadeOut => 0.0,
+        };
+        self.fade = Some(FadeOperation {
+            direction,
+            increase_factor: 0.05,
+            current_fade: start_value,
+        });
     }
 
-    pub fn fadeout(&mut self, vblank: &VBlank, sfx: &mut Sfx) {
-        let increase_factor = 0.05;
-        self.blend.reset_fades();
-        let mut blend_level = 0.0;
-        while blend_level < 1.0 {
-            blend_level += increase_factor;
-            self.blend.set_fade(Num::from_f64(blend_level));
-            self.blend.commit();
-            sfx.frame();
-            vblank.wait_for_vblank();
-        }
+    pub fn fade_frame(&mut self) -> bool {
+        let fade = self.fade.as_mut().unwrap();
+        let is_finished = match fade.direction {
+            FadeDirection::FadeIn => {
+                fade.current_fade -= fade.increase_factor;
+                fade.current_fade <= 0.0
+            }
+            FadeDirection::FadeOut => {
+                fade.current_fade += fade.increase_factor;
+                fade.current_fade >= 1.0
+            }
+        };
+        self.blend.set_fade(Num::from_f64(fade.current_fade));
+        self.blend.commit();
+        is_finished
     }
 }

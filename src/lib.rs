@@ -18,7 +18,7 @@ use agb::{
     rng::RandomNumberGenerator,
     sound::mixer::Frequency,
 };
-use background::RegularMapAndId;
+use background::{Background, FadeDirection, RegularMapAndId};
 use sfx::Sfx;
 
 fn wait_for_input(vblank: &VBlank, input: &mut ButtonController, sfx: &mut Sfx) {
@@ -29,6 +29,19 @@ fn wait_for_input(vblank: &VBlank, input: &mut ButtonController, sfx: &mut Sfx) 
             break;
         }
         vblank.wait_for_vblank();
+    }
+}
+
+fn wait_for_fade(
+    fade_direction: FadeDirection,
+    background: &mut Background,
+    vblank: &VBlank,
+    sfx: &mut Sfx,
+) {
+    background.start_fade(fade_direction);
+    while !background.fade_frame() {
+        vblank.wait_for_vblank();
+        sfx.frame();
     }
 }
 
@@ -79,21 +92,21 @@ pub fn main(mut gba: agb::Gba) -> ! {
     let mut add_fading = false;
     loop {
         if add_fading {
-            background.fadeout(&vblank, &mut sfx);
+            wait_for_fade(FadeDirection::FadeOut, &mut background, &vblank, &mut sfx);
         }
         background.set_mode(background::Mode::SPLASH, &mut vram);
         background.commit(&mut vram);
         objects.commit();
         if add_fading {
-            background.fadein(&vblank, &mut sfx);
+            wait_for_fade(FadeDirection::FadeIn, &mut background, &vblank, &mut sfx);
         }
 
         wait_for_input(&vblank, &mut input, &mut sfx);
 
-        background.fadeout(&vblank, &mut sfx);
+        wait_for_fade(FadeDirection::FadeOut, &mut background, &vblank, &mut sfx);
         background.set_mode(background::Mode::GAME, &mut vram);
         background.commit(&mut vram);
-        background.fadein(&vblank, &mut sfx);
+        wait_for_fade(FadeDirection::FadeIn, &mut background, &vblank, &mut sfx);
 
         {
             let mut apple = apple::Apple::new(&objects, &mut rng);
