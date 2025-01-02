@@ -101,7 +101,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                     snake.apply_input(input);
                 }
 
-                snake.try_move(&objects, &mut apple, &mut rng, &mut sfx);
+                snake.frame(&objects, &mut apple, &mut rng, &mut sfx);
                 objects.commit();
             }
 

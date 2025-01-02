@@ -1,5 +1,5 @@
 use agb::{
-    display::object::{OamManaged, Object, Sprite},
+    display::object::{OamManaged, Object, Sprite, Tag},
     fixnum::Vector2D,
     input::Button,
     rng::RandomNumberGenerator,
@@ -10,7 +10,8 @@ use crate::{apple::Apple, constants, sfx::Sfx};
 
 static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/snake.aseprite");
 
-static SPRITE_HEAD: &Sprite = SPRITES.tags().get("head").sprite(0);
+static SPRITE_HEAD_TAG: &Tag = SPRITES.tags().get("head");
+
 static SPRITE_HEAD_DEAD: &Sprite = SPRITES.tags().get("head-dead").sprite(0);
 static SPRITE_BODY: &Sprite = SPRITES.tags().get("body").sprite(0);
 
@@ -30,6 +31,7 @@ struct SnakeBodyCell<'a> {
 pub struct Snake<'a> {
     body: Vec<SnakeBodyCell<'a>>,
     direction: Direction,
+    animation_frame: usize,
     pub is_alive: bool,
 }
 
@@ -52,7 +54,11 @@ impl<'a> Snake<'a> {
         // Init snake
         let mut snake_starting_body: Vec<SnakeBodyCell> = Vec::new();
         for i in 0..length {
-            let sprite = if i == 0 { SPRITE_HEAD } else { SPRITE_BODY };
+            let sprite = if i == 0 {
+                SPRITE_HEAD_TAG.sprite(0)
+            } else {
+                SPRITE_BODY
+            };
 
             let mut object = objects.object_sprite(sprite);
             object.show();
@@ -68,6 +74,7 @@ impl<'a> Snake<'a> {
         Self {
             body: snake_starting_body,
             direction: Direction::RIGHT,
+            animation_frame: 0,
             is_alive: true,
         }
     }
@@ -114,7 +121,14 @@ impl<'a> Snake<'a> {
         });
     }
 
-    pub fn try_move(
+    fn play_anim(&mut self, objects: &'a OamManaged<'a>) {
+        self.animation_frame = (self.animation_frame + 1) % SPRITE_HEAD_TAG.sprites().len();
+        self.body[0]
+            .sprite
+            .set_sprite(objects.sprite(SPRITE_HEAD_TAG.sprite(self.animation_frame)));
+    }
+
+    pub fn frame(
         &mut self,
         objects: &'a OamManaged<'a>,
         apple: &mut Apple,
@@ -150,6 +164,8 @@ impl<'a> Snake<'a> {
         self.body[0].position = head_projection;
 
         self.move_sprites();
+
+        self.play_anim(objects);
 
         return true;
     }
