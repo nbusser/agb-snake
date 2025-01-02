@@ -6,7 +6,7 @@ use agb::{
 };
 use alloc::vec::Vec;
 
-use crate::{apple::Apple, constants};
+use crate::{apple::Apple, constants, sfx::Sfx};
 
 static SPRITES: &agb::display::object::Graphics = agb::include_aseprite!("gfx/snake.aseprite");
 
@@ -97,11 +97,12 @@ impl<'a> Snake<'a> {
         &self.body[0]
     }
 
-    fn die(&mut self, objects: &OamManaged) {
+    fn die(&mut self, objects: &OamManaged, sfx: &mut Sfx) {
         self.is_alive = false;
         self.body[0]
             .sprite
             .set_sprite(objects.sprite(&SPRITE_HEAD_DEAD));
+        sfx.play_death_sound();
     }
 
     fn move_sprites(&mut self) {
@@ -118,6 +119,7 @@ impl<'a> Snake<'a> {
         objects: &'a OamManaged<'a>,
         apple: &mut Apple,
         rng: &mut RandomNumberGenerator,
+        sfx: &mut Sfx,
     ) -> bool {
         let head_projection = self.head().position + Snake::get_movement_offset(&self.direction);
 
@@ -130,7 +132,7 @@ impl<'a> Snake<'a> {
                 .iter()
                 .any(|body_cell| body_cell.position == head_projection)
         {
-            self.die(objects);
+            self.die(objects, sfx);
             return false;
         }
 
@@ -138,6 +140,7 @@ impl<'a> Snake<'a> {
             && head_projection.y == apple.position.y as i32
         {
             apple.move_apple(rng);
+            sfx.play_eat_apple();
             self.grow(objects);
         }
 

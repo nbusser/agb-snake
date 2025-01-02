@@ -59,8 +59,9 @@ pub fn main(mut gba: agb::Gba) -> ! {
     background.commit(&mut vram);
 
     let mut mixer = gba.mixer.mixer(Frequency::Hz32768);
+    gba.sound.enable();
     mixer.enable();
-    let mut sfx = sfx::Sfx::new(&mut mixer);
+    let mut sfx = sfx::Sfx::new(&mut mixer, &mut gba.sound);
 
     let mut input = agb::input::ButtonController::new();
 
@@ -100,7 +101,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                     snake.apply_input(input);
                 }
 
-                snake.try_move(&objects, &mut apple, &mut rng);
+                snake.try_move(&objects, &mut apple, &mut rng, &mut sfx);
                 objects.commit();
             }
 
