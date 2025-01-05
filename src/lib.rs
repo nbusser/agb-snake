@@ -53,15 +53,20 @@ pub fn main(mut gba: agb::Gba) -> ! {
 
     let mut rng = RandomNumberGenerator::new();
 
-    let (tiled, mut vram) = gba.display.video.tiled1();
+    let (tiled, mut vram) = gba.display.video.tiled0();
 
-    let mut background1 = tiled.regular(
-        Priority::P1,
+    let mut background1 = tiled.background(
+        Priority::P0,
         display::tiled::RegularBackgroundSize::Background32x32,
         TileFormat::FourBpp,
     );
-    let mut background2 = tiled.regular(
-        Priority::P0,
+    let mut background2 = tiled.background(
+        Priority::P2,
+        display::tiled::RegularBackgroundSize::Background32x32,
+        TileFormat::FourBpp,
+    );
+    let mut background3 = tiled.background(
+        Priority::P1,
         display::tiled::RegularBackgroundSize::Background32x32,
         TileFormat::FourBpp,
     );
@@ -76,6 +81,10 @@ pub fn main(mut gba: agb::Gba) -> ! {
         RegularMapAndId {
             id: background2.background(),
             map: &mut background2,
+        },
+        RegularMapAndId {
+            id: background3.background(),
+            map: &mut background3,
         },
         blend,
         background::Mode::SPLASH,
@@ -96,7 +105,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
         if add_fading {
             wait_for_fade(FadeDirection::FadeOut, &mut background, &vblank, &mut sfx);
         }
-        background.set_mode(background::Mode::SPLASH, &mut vram);
+        background.set_mode(background::Mode::SPLASH);
         background.commit(&mut vram);
         objects.commit();
         if add_fading {
@@ -106,7 +115,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
         wait_for_input(&vblank, &mut input, &mut sfx);
 
         wait_for_fade(FadeDirection::FadeOut, &mut background, &vblank, &mut sfx);
-        background.set_mode(background::Mode::GAME, &mut vram);
+        background.set_mode(background::Mode::GAME);
         background.commit(&mut vram);
         wait_for_fade(FadeDirection::FadeIn, &mut background, &vblank, &mut sfx);
 
@@ -127,7 +136,7 @@ pub fn main(mut gba: agb::Gba) -> ! {
                     if let Some(frame_input) =
                         [Button::UP, Button::DOWN, Button::LEFT, Button::RIGHT]
                             .iter()
-                            .find(|button| input.is_just_pressed(**button))
+                            .find(|button| input.is_pressed(**button))
                             .copied()
                     {
                         next_input = Some(frame_input);
